@@ -6,7 +6,15 @@ from rich.console import Console
 from rich.text import Text
 
 from pyawn.board.renderer import render_board
-from pyawn.openings.loader import OpeningStub, VariationStub, get_opening, list_openings
+from pyawn.openings.loader import (
+    OpeningStub,
+    VariationStub,
+    get_opening,
+    has_study_data,
+    list_openings,
+    load_variation,
+)
+from pyawn.study.session import StudySession
 from pyawn.ui.theme import ACCENT, BOX_BL, BOX_BR, BOX_H, BOX_TL, BOX_TR, BOX_V, MUTED
 
 console = Console()
@@ -102,26 +110,43 @@ def _select_variation(opening: OpeningStub) -> VariationStub | None:
     return _select_variation(opening)
 
 
-# ── Board preview (stub session) ──────────────────────────────────────────────
+# ── Mode runners ─────────────────────────────────────────────────────────────
 
-def _show_board_preview(mode: str, opening: OpeningStub, variation: VariationStub) -> None:
+def _run_study(opening: OpeningStub, variation: VariationStub) -> None:
+    if not has_study_data(opening.id):
+        console.clear()
+        console.print()
+        _print_box("Em breve", [
+            f"[{MUTED}]Dados de estudo para[/] [bold]{opening.name}[/] [dim]ainda não disponíveis.[/]",
+        ])
+        console.print()
+        console.input("  Pressione Enter para voltar... ")
+        return
+
+    try:
+        var = load_variation(opening.id, variation.id)
+    except ValueError as exc:
+        console.print(f"\n  [red]{exc}[/]\n")
+        console.input("  Pressione Enter para voltar... ")
+        return
+
+    StudySession(opening_id=opening.id, variation=var, console=console).run()
+
+
+def _show_board_preview(opening: OpeningStub, variation: VariationStub) -> None:
     console.clear()
     console.print()
     console.print(
         f"  [bold]{opening.name}[/] [dim]·[/] [cyan]{variation.name}[/]"
-        f"  [dim]({mode.upper()})[/]\n"
+        f"  [dim](DRILL)[/]\n"
     )
-
-    board = chess.Board()
-    render_board(board, console, info={
+    render_board(chess.Board(), console, info={
         "opening": opening.name,
         "variation": variation.name,
     })
-
     console.print()
     _print_box("Em breve", [
-        f"[{MUTED}]Modo {mode} ainda não implementado.[/]",
-        f"[{MUTED}]Esta tela valida menus e renderização.[/]",
+        f"[{MUTED}]Modo drill ainda não implementado.[/]",
     ])
     console.print()
     console.input("  Pressione Enter para voltar... ")
@@ -165,7 +190,10 @@ def _run_mode(mode: str, opening_id: str | None) -> None:
     if not variation:
         return
 
-    _show_board_preview(mode, opening, variation)
+    if mode == "study":
+        _run_study(opening, variation)
+    else:
+        _show_board_preview(opening, variation)
 
 
 # ── Main menu ─────────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@
 Board renderer — layout inspirado no chs / python-chess SVG.
 
 Colunas lado a lado:
-  [margin + rank-label + 8 squares × 4 chars]  [eval bar]  [info panel]
+  [rank label + 8 squares × 3 chars]  [gap]  [eval bar]  [info panel]
 """
 import math
 
@@ -15,31 +15,28 @@ _LIGHT     = "#f0d9b5"
 _DARK      = "#b58863"
 _HL_LIGHT  = "#cdd26a"
 _HL_DARK   = "#aaa23a"
-_CHECK     = "#cc3333"
+_CHECK     = "#ff6b6b"
 
 # ── Eval bar ──────────────────────────────────────────────────────────────────
-_EVAL_WHITE = "#e0e0e0"
+_EVAL_WHITE = "#e8e8e8"
 _EVAL_BLACK = "#1c1c1c"
 
 # ── Piece colours — white=bright white, black=pure black ─────────────────────
-_WP_FG = "bold bright_white"
-_BP_FG = "bold #000000"
+_WP_FG = "bold #ffffff"
+_BP_FG = "bold #1a1a1a"
 
-# ── Ranks whose label gets the board background (piece rows) ──────────────────
-_BG_RANKS = {0, 1, 6, 7}   # rank_idx: ranks 1, 2, 7, 8
-
-_SQ_W = 4   # chars per square: " P  " or "    "
+_SQ_W = 3   # chars per square: " P " or "   "
 
 _PIECE_VAL = {chess.PAWN: 1, chess.KNIGHT: 3, chess.BISHOP: 3,
               chess.ROOK: 5, chess.QUEEN: 9, chess.KING: 0}
 
 SYMBOLS: dict[tuple[int, bool], str] = {
-    (chess.PAWN,   True ): "♙", (chess.PAWN,   False): "♟",
-    (chess.KNIGHT, True ): "♘", (chess.KNIGHT, False): "♞",
-    (chess.BISHOP, True ): "♗", (chess.BISHOP, False): "♝",
-    (chess.ROOK,   True ): "♖", (chess.ROOK,   False): "♜",
-    (chess.QUEEN,  True ): "♕", (chess.QUEEN,  False): "♛",
-    (chess.KING,   True ): "♔", (chess.KING,   False): "♚",
+    (chess.PAWN,   True ): "♟", (chess.PAWN,   False): "♟", #♙
+    (chess.KNIGHT, True ): "♞", (chess.KNIGHT, False): "♞", #♘
+    (chess.BISHOP, True ): "♝", (chess.BISHOP, False): "♝", #♗
+    (chess.ROOK,   True ): "♜", (chess.ROOK,   False): "♜", #♖
+    (chess.QUEEN,  True ): "♛", (chess.QUEEN,  False): "♛", #♕
+    (chess.KING,   True ): "♚", (chess.KING,   False): "♚", #♔
 }
 
 _FILES = "abcdefgh"
@@ -83,9 +80,9 @@ def render_board(
 
     # ── Header ────────────────────────────────────────────────────────────────
     turn_label = "White to move" if board.turn == chess.WHITE else "Black to move"
-    # board_w = rank-label (2) + 8 squares × _SQ_W; -5 aligns ┐ with last square
+    # board_w = rank-label (2) + 8 squares × _SQ_W
     board_w = 2 + 8 * _SQ_W
-    fill = "─" * (board_w - len(turn_label) - 5)
+    fill = "─" * (board_w - len(turn_label) - 4)
     console.print(
         Text.assemble(
             ("  ┌─ ", "cyan"),
@@ -97,18 +94,12 @@ def render_board(
     # ── Board rows ────────────────────────────────────────────────────────────
     for row_i, rank_idx in enumerate(ranks):
         row = Text()
-        row.append("  ")   # left margin — always terminal bg
+        row.append("  ")   # left margin
 
-        # Rank label: coloured bg on piece rows (1,2,7,8)
-        label = str(rank_idx + 1)
-        if rank_idx in _BG_RANKS:
-            left_file = files[0]
-            label_bg = _plain_sq_bg(left_file, rank_idx)
-            row.append(f"{label} ", style=f"on {label_bg}")
-        else:
-            row.append(f"{label} ")
+        # Rank label: plain text, no background colour
+        row.append(f"{rank_idx + 1} ")
 
-        # Squares
+        # Squares — all 64 cells have the light/dark checkered background
         for file_idx in files:
             sq = chess.square(file_idx, rank_idx)
             piece = board.piece_at(sq)
@@ -116,11 +107,14 @@ def render_board(
             if piece:
                 fg = _WP_FG if piece.color == chess.WHITE else _BP_FG
                 sym = SYMBOLS[(piece.piece_type, piece.color)]
-                row.append(f" {sym}  ", style=f"{fg} on {bg}")
+                row.append(f" {sym} ", style=f"{fg} on {bg}")
             else:
                 row.append(" " * _SQ_W, style=f"on {bg}")
 
-        # Eval bar
+        # Gap between board and eval bar
+        row.append("   ")
+
+        # Eval bar (2-char wide)
         eval_bg = _EVAL_BLACK if row_i < n_black else _EVAL_WHITE
         row.append("  ", style=f"on {eval_bg}")
 
@@ -133,8 +127,8 @@ def render_board(
     # ── File labels + white's captured pieces ─────────────────────────────────
     file_row = Text("    ")   # 2 margin + 2 rank-label
     for f in files:
-        file_row.append(f"  {_FILES[f]} ", style="dim")
-    file_row.append("    ")   # eval bar gap
+        file_row.append(f" {_FILES[f]} ", style="dim")
+    file_row.append("   ")   # gap + eval bar placeholder
     wcap = _captured_str(captured[chess.WHITE], chess.BLACK)
     adv_w = adv[chess.WHITE]
     file_row.append(f"  {wcap}", style="dim")
@@ -199,15 +193,12 @@ def _build_info_lines(
 def _is_light(file: int, rank: int) -> bool:
     return (file + rank) % 2 == 1
 
-def _plain_sq_bg(file: int, rank: int) -> str:
-    return _LIGHT if _is_light(file, rank) else _DARK
-
 def _sq_bg(file: int, rank: int, highlighted: bool, in_check: bool) -> str:
     if in_check:
         return _CHECK
     if highlighted:
         return _HL_LIGHT if _is_light(file, rank) else _HL_DARK
-    return _plain_sq_bg(file, rank)
+    return _LIGHT if _is_light(file, rank) else _DARK
 
 
 # ── Data helpers ──────────────────────────────────────────────────────────────

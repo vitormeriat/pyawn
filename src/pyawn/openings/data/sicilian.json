@@ -1,0 +1,73 @@
+{
+  "id": "sicilian",
+  "name": "Sicilian Defense",
+  "eco": "B20-B99",
+  "variations": [
+    {
+      "id": "najdorf",
+      "name": "Najdorf",
+      "eco": "B90",
+      "moves": ["e4", "c5", "Nf3", "d6", "d4", "cxd4", "Nxd4", "Nf6", "Nc3", "a6"],
+      "plan": "Pretas buscam contrajogo na ala da dama com ...b5. Brancas atacam no lado do rei com o English Attack (Be3, f3, g4) ou com Bg5 no estilo clássico.",
+      "annotations": [
+        {
+          "after_move": 1,
+          "text": "1.e4 — Controle do centro e abertura de diagonais para o bispo e a dama. A resposta mais popular das pretas é 1...c5."
+        },
+        {
+          "after_move": 2,
+          "text": "1...c5 — A Siciliana. Pretas desequilibram imediatamente sem espelhar o peão branco. Ao trocar um peão de flanco pelo peão central de brancas, pretas ficam com maioria central."
+        },
+        {
+          "after_move": 5,
+          "text": "3.d4 — Brancas abrem o centro enquanto podem. Este é o momento crítico: aceitar a troca favorece pretas em número de peões centrais."
+        },
+        {
+          "after_move": 6,
+          "text": "3...cxd4 — Pretas capturam e ficam com um peão em d6 contra o peão e4 de brancas. A diferença assimétrica de peões gera posições ricas e complexas."
+        },
+        {
+          "after_move": 10,
+          "text": "5...a6 — O lance de Najdorf, popularizado por Bobby Fischer e Garry Kasparov. Previne Nb5 e Bb5+, e prepara ...b5 com expansão na ala da dama. Considerado o lance mais popular do xadrez moderno."
+        }
+      ],
+      "master_games": [
+        {
+          "white": "Fischer",
+          "black": "Petrosian",
+          "year": 1959,
+          "event": "Candidates Tournament",
+          "pgn": "1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 a6"
+        }
+      ]
+    },
+    {
+      "id": "dragon",
+      "name": "Dragon",
+      "eco": "B70",
+      "moves": ["e4", "c5", "Nf3", "d6", "d4", "cxd4", "Nxd4", "Nf6", "Nc3", "g6"],
+      "plan": "Pretas desenvolvem o bispo em g7 (o 'dragão') para pressionar a diagonal longa h8-a1. Brancas tipicamente jogam o Yugoslav Attack com Be3, f3 e Qd2, visando atacar o rei preto.",
+      "annotations": [
+        {
+          "after_move": 10,
+          "text": "5...g6 — O Dragon. Pretas preparam ...Bg7 para controlar a diagonal longa. É uma das variações mais táticas do xadrez: ambos os lados atacam ao mesmo tempo, uma das variações mais estudadas e mais ricas do jogo."
+        }
+      ],
+      "master_games": []
+    },
+    {
+      "id": "scheveningen",
+      "name": "Scheveningen",
+      "eco": "B80",
+      "moves": ["e4", "c5", "Nf3", "d6", "d4", "cxd4", "Nxd4", "Nf6", "Nc3", "e6"],
+      "plan": "Pretas formam uma estrutura sólida com peões em c5, d6 e e6 — a 'pequena muralha'. Buscam contrajogo com ...a6 e ...b5 mantendo flexibilidade para qualquer ala.",
+      "annotations": [
+        {
+          "after_move": 10,
+          "text": "5...e6 — A Scheveningen. Pretas erguem uma estrutura de peões compacta e flexível. Mais sólida que o Najdorf, mas igualmente rica em contrajogo. Foi a abertura favorita de Kasparov em seus anos iniciais."
+        }
+      ],
+      "master_games": []
+    }
+  ]
+}
