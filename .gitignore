@@ -40,4 +40,4 @@ Thumbs.db
 ~/.pyawn/
 
 # Token log (gerado localmente, não versionar)
-docs/token_log.log
+logs/

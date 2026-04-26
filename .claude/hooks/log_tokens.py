@@ -1,50 +1,43 @@
 #!/usr/bin/env python3
-"""Stop hook: appends one log line per interaction to docs/token_log.log."""
+"""Stop hook: appends one CSV row per interaction to logs/token_log.csv."""
+import csv
 import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-LOG_FILE = Path(__file__).parent.parent.parent / "docs" / "token_log.log"
+LOG_FILE = Path(__file__).parent.parent.parent / "logs" / "token_log.csv"
+
+HEADER = [
+    "timestamp", "session_id", "model",
+    "input_tokens", "output_tokens",
+    "cache_read_tokens", "cache_write_tokens",
+]
 
 
-def find_usage(obj: object) -> dict | None:
-    """Recursively search for an API usage dict inside the transcript message."""
-    if isinstance(obj, dict):
-        if "input_tokens" in obj and "output_tokens" in obj:
-            return obj
-        for v in obj.values():
-            found = find_usage(v)
-            if found:
-                return found
-    elif isinstance(obj, list):
-        for item in obj:
-            found = find_usage(item)
-            if found:
-                return found
-    return None
-
-
-def last_usage_from_transcript(path: str) -> dict:
-    if not path:
+def last_assistant_usage(transcript_path: str) -> dict:
+    """Return usage dict from the last assistant message in the transcript."""
+    if not transcript_path:
         return {}
-    transcript = Path(path)
-    if not transcript.exists():
+    path = Path(transcript_path)
+    if not path.exists():
         return {}
+
     usage: dict = {}
     try:
-        with open(transcript) as f:
-            for line in f:
-                line = line.strip()
-                if not line:
+        with open(path) as f:
+            for raw in f:
+                raw = raw.strip()
+                if not raw:
                     continue
                 try:
-                    msg = json.loads(line)
-                    found = find_usage(msg)
-                    if found:
-                        usage = found
+                    entry = json.loads(raw)
                 except json.JSONDecodeError:
                     continue
+                if entry.get("type") == "assistant":
+                    msg = entry.get("message", {})
+                    if "usage" in msg:
+                        usage = {"model": msg.get("model", ""), **msg["usage"]}
     except OSError:
         pass
     return usage
@@ -58,25 +51,26 @@ def main() -> None:
 
     session_id = payload.get("session_id", "")
     transcript_path = payload.get("transcript_path", "")
+    usage = last_assistant_usage(transcript_path)
 
-    usage = last_usage_from_transcript(transcript_path)
-
-    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    sess = session_id[:8] if session_id else "--------"
-    inp = usage.get("input_tokens", 0)
-    out = usage.get("output_tokens", 0)
-    cache_r = usage.get("cache_read_input_tokens", 0)
-    cache_w = usage.get("cache_creation_input_tokens", 0)
-
-    line = (
-        f"{ts}  sess={sess}"
-        f"  in={inp:>6}  out={out:>5}"
-        f"  cache_r={cache_r:>6}  cache_w={cache_w:>6}\n"
-    )
+    row = {
+        "timestamp":          datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "session_id":         session_id[:8] if session_id else "",
+        "model":              usage.get("model", ""),
+        "input_tokens":       usage.get("input_tokens", 0),
+        "output_tokens":      usage.get("output_tokens", 0),
+        "cache_read_tokens":  usage.get("cache_read_input_tokens", 0),
+        "cache_write_tokens": usage.get("cache_creation_input_tokens", 0),
+    }
 
     LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(LOG_FILE, "a") as f:
-        f.write(line)
+    write_header = not LOG_FILE.exists()
+
+    with open(LOG_FILE, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=HEADER)
+        if write_header:
+            writer.writeheader()
+        writer.writerow(row)
 
 
 if __name__ == "__main__":
