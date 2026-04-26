@@ -38,3 +38,6 @@ Thumbs.db
 
 # pyawn user data (local only)
 ~/.pyawn/
+
+# Token log (gerado localmente, não versionar)
+docs/token_log.log
